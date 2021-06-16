@@ -1,0 +1,14 @@
+{
+	"generate1": {
+		"outputPath": "gyroid05.vdb",
+		"voxelSize": [0.01,0.01,0.01],
+		"latticeType": "gyroid",
+		"gridDimensions": [600, 600, 600]
+	},
+	"offsetFill": {
+		"inputPath": "sphere.vdb",
+		"outputPath": "bunnyoffset.obj",
+		"latticeType": "gyroid",
+		"offset": -1.5
+	}
+}
