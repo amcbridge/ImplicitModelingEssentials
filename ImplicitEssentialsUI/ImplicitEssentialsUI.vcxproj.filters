@@ -15,30 +15,48 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Lattice.cpp">
+    <ClCompile Include="uiApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ParametersReader.cpp">
+    <ClCompile Include="uiMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IO.cpp">
+    <ClCompile Include="generatePanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Operations.cpp">
+    <ClCompile Include="basePanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="latticePanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="offsetPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="booleanPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Lattice.h">
+    <ClInclude Include="uiApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ParametersReader.h">
+    <ClInclude Include="uiMain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IO.h">
+    <ClInclude Include="generatePanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Operations.h">
+    <ClInclude Include="basePanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="latticePanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="offsetPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="booleanPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

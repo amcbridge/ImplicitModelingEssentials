@@ -26,21 +26,6 @@ void Parameters::Read(const nlohmann::json& node)
 	mEmpty = false;
 }
 
-void GenerateParameters::Read(const nlohmann::json& node)
-{
-	Parameters::Read(node);
-	mLatticeType = GetRequiredParameter<std::string>(node, ArgNames::LatticeType);
-	auto voxelSize = GetRequiredParameter<std::array<float, 3>>(node, ArgNames::VoxelSize);
-	mVoxelSize.x() = voxelSize[0];
-	mVoxelSize.y() = voxelSize[1];
-	mVoxelSize.z() = voxelSize[2];
-
-	auto gridSize = GetRequiredParameter<std::array<int, 3>>(node, ArgNames::GridDimensions);
-	mGridDimensions.x() = gridSize[0];
-	mGridDimensions.y() = gridSize[1];
-	mGridDimensions.z() = gridSize[2];
-}
-
 void BooleanParameters::Read(const nlohmann::json& node)
 {
 	Parameters::Read(node);
@@ -71,10 +56,6 @@ ParametersReader::ParametersReader(const std::filesystem::path& jsonFilePath)
 	nlohmann::json jsonRootNode = nlohmann::json::parse(inputFileStream);
 	
 	nlohmann::json modeNode;
-	if (GetOptionalNode(jsonRootNode, ArgNames::GenerateMode, modeNode))
-	{
-		mGenParameters.Read(modeNode);
-	}
 
 	if (GetOptionalNode(jsonRootNode, ArgNames::BooleanMode, modeNode))
 	{

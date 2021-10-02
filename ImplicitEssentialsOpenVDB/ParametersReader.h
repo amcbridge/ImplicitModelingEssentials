@@ -1,7 +1,7 @@
 #pragma once
 
-#include "nlohmann/json.hpp"
-#include <openvdb/openvdb.h>
+#include "openvdb/openvdb.h"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -41,19 +41,6 @@ class Parameters
 		static bool GetOptionalParameter(const nlohmann::json& node, const std::string& paramName, T& value);
 };
 
-class GenerateParameters : public Parameters
-{
-	public:
-		const openvdb::Vec3s& GetVoxelSize() const { return mVoxelSize; }
-		const openvdb::Vec3i& GetGridDimensions() const { return mGridDimensions; }
-		const std::string& GetLatticeType() const { return mLatticeType; }
-		virtual void Read(const nlohmann::json& node) override;
-	private:
-		std::string mLatticeType;
-		openvdb::Vec3s mVoxelSize;
-		openvdb::Vec3i mGridDimensions;
-};
-
 class BooleanParameters : public Parameters
 {
 	public:
@@ -88,12 +75,10 @@ class ParametersReader
 {
 	public:
 		ParametersReader(const std::filesystem::path& jsonFilePath);
-		const GenerateParameters& GetGenerateParameters() const { return mGenParameters; }
 		const BooleanParameters& GetBooleanParameters() const { return mBoolParameters; }
 		const OffsetParameters& GetOffsetParameters() const { return mOffsetParameters; }
 
 	private:
-		GenerateParameters mGenParameters;
 		BooleanParameters mBoolParameters;
 		OffsetParameters mOffsetParameters;
 

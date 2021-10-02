@@ -1,24 +1,24 @@
 #include "Operations.h"
 
-void Operations::GenerateLattice(const GenerateParameters& params)
+void Operations::GenerateLattice(float voxelSize, int gridDimension, const std::string& latticeType, const std::string& outPath)
 {
 	auto latticeGrid = openvdb::FloatGrid::create();
 	latticeGrid->setGridClass(openvdb::GRID_LEVEL_SET);
 	latticeGrid->setName("lattice");
 
 	openvdb::math::Mat4d matrix(
-		size.x(), 0.f, 0.f, 0.f,
-		0.f, size.y(), 0.f, 0.f,
-		0.f, 0.f, size.z(), 0.f,
+		voxelSize, 0.f, 0.f, 0.f,
+		0.f, voxelSize, 0.f, 0.f,
+		0.f, 0.f, voxelSize, 0.f,
 		0.f, 0.f, 0.f, 1.f);
 
 	openvdb::math::Transform::Ptr transform = openvdb::math::Transform::createLinearTransform(matrix);
 	latticeGrid->setTransform(transform);
 
-	openvdb::Vec3i gridSize(params.GetGridDimensions());
+	openvdb::Vec3i gridSize(gridDimension);
 	openvdb::CoordBBox gridBbox(openvdb::Coord(0), openvdb::Coord(gridSize));
-	FillGridWithLattice(params.GetLatticeType(), latticeGrid, gridBbox);
-	IO::Write(latticeGrid, params.GetOutputPath());
+	FillGridWithLattice(latticeType, latticeGrid, gridBbox);
+	IO::Write(latticeGrid, outPath);
 }
 
 void Operations::Boolean(const BooleanParameters & params)
@@ -62,15 +62,15 @@ void Operations::Boolean(const BooleanParameters & params)
 	IO::Write(aGrid, params.GetOutputPath());
 }
 
-void Operations::OffsetFill(const OffsetParameters & params)
+void Operations::OffsetFill(float offset, const std::string& inputPath, const std::string& latticeType, const std::string& outPath)
 {
-	auto mainGrid = IO::Read(params.GetInputPath());
+	auto mainGrid = IO::Read(inputPath);
 	openvdb::FloatGrid::Ptr innerGrid = mainGrid->deepCopy();
 
 	std::cout << "Offsetting grid" << std::endl;
 
 	openvdb::tools::LevelSetFilter<openvdb::FloatGrid> filter(*innerGrid);
-	filter.offset(params.GetOffsetValue());
+	filter.offset(offset);
 
 	std::cout << "Offset finished" << std::endl;
 
@@ -80,11 +80,11 @@ void Operations::OffsetFill(const OffsetParameters & params)
 	openvdb::FloatGrid::Ptr lattice = openvdb::FloatGrid::create(background);
 	lattice->setGridClass(openvdb::GRID_LEVEL_SET);
 	lattice->setTransform(innerGrid->transformPtr());
-	FillGridWithLattice(params.GetLatticeType(), lattice, gridSize);
+	FillGridWithLattice(latticeType, lattice, gridSize);
 	openvdb::tools::csgIntersection(*innerGrid, *lattice);
 	openvdb::tools::csgDifference(*mainGrid, *innerGrid);
 	
-	IO::Write(mainGrid, params.GetOutputPath());
+	IO::Write(mainGrid, outPath);
 }
 
 Lattice& Operations::GetLatticeType(const std::string & name)
