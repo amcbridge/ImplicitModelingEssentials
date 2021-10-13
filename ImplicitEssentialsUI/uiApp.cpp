@@ -15,5 +15,6 @@ bool uiApp::OnInit()
 	main = new uiMain();
 	main->Show();
 	main->CenterOnScreen();
+	openvdb::initialize();
 	return true;
 }

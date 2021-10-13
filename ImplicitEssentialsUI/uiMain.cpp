@@ -7,8 +7,9 @@ wxBEGIN_EVENT_TABLE(uiMain, wxFrame)
 wxEND_EVENT_TABLE()
 
 const long style = wxCAPTION | wxCLOSE_BOX;
+const std::string windowTitle = "Implicit Modeling Demo";
 
-uiMain::uiMain() : wxFrame(nullptr, wxID_ANY, "Implicit Modeling Demo", wxDefaultPosition, wxSize(400, 300), style)
+uiMain::uiMain() : wxFrame(nullptr, wxID_ANY, windowTitle, wxDefaultPosition, wxSize(400, 300), style)
 {
 	wxArrayString strings;
 	strings.Add(wxT("Generate"));
@@ -16,9 +17,9 @@ uiMain::uiMain() : wxFrame(nullptr, wxID_ANY, "Implicit Modeling Demo", wxDefaul
 	strings.Add(wxT("Boolean"));
 	mFunctions = new wxComboBox(this, 10001, wxT("Generate"), wxPoint(10, 10), wxSize(150, 25), strings, wxCB_READONLY);
 	mSizer = new wxBoxSizer(wxVERTICAL);
-	mGeneratePanel = new generatePanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 180));
-	mOffsetPanel = new offsetPanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 180));
-	mBooleanPanel = new booleanPanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 180));
+	mGeneratePanel = new generatePanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 170));
+	mOffsetPanel = new offsetPanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 170));
+	mBooleanPanel = new booleanPanel(this, wxID_ANY, wxDefaultPosition, wxSize(400, 170));
 	mSizer->Add(mFunctions, 0, wxEXPAND | wxLEFT | wxTOP | wxRIGHT, 5);
 	mSizer->Add(mGeneratePanel, 0, wxEXPAND | wxALL, 5);
 	mSizer->Add(mOffsetPanel, 0, wxEXPAND | wxALL, 5);
@@ -26,8 +27,11 @@ uiMain::uiMain() : wxFrame(nullptr, wxID_ANY, "Implicit Modeling Demo", wxDefaul
 	mSizer->Hide(2);
 	mSizer->Hide(3);
 	this->SetSizer(mSizer);
+	mProgress = new wxGauge(this, wxID_ANY, 1, wxDefaultPosition, wxSize(150, 15), wxGA_HORIZONTAL);
+	mSizer->Add(mProgress, 0, wxEXPAND | wxRIGHT | wxLEFT | wxBOTTOM, 5);
 	mSaveButton = new wxButton(this, 10002, "Execute");
 	mSizer->Add(mSaveButton, 0, wxEXPAND | wxALL, 5);
+	Bind(wxEVT_THREAD, (wxObjectEventFunction)&uiMain::onThreadUpdate, this);
 }
 
 uiMain::~uiMain()
@@ -62,32 +66,95 @@ void uiMain::onComboboxValueChanged(wxCommandEvent & event)
 
 void uiMain::onExecuteClick(wxCommandEvent & event)
 {
-	wxFileDialog
-		saveFileDialog(this, _("Save VDB file"), "", "",
-			"VDB files (*.vdb)|*.vdb", wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+	wxFileDialog saveFileDialog(this, uiMain::getSaveWindowLabel(), "", "",
+			uiMain::getSaveWindowFilter(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 	
 	if (saveFileDialog.ShowModal() == wxID_CANCEL)
 		return;
 
-	auto outPath = saveFileDialog.GetPath().ToStdString();
-	if (mFunctions->GetValue() == "Generate")
+	mOutPath.assign(saveFileDialog.GetPath().ToStdString());
+	
+	if (CreateThread(wxTHREAD_JOINABLE) != wxTHREAD_NO_ERROR)
 	{
-		float voxelSize(mGeneratePanel->getVoxelSize());
-		int gridSize(mGeneratePanel->getGridSize());
-		std::string latticeType(mGeneratePanel->getLatticeType());
-		Operations::GenerateLattice(voxelSize, gridSize, latticeType, outPath);
+		wxMessageBox("Could not create the worker thread!", windowTitle, wxICON_ERROR);
+		return;
 	}
-	else if (mFunctions->GetValue() == "OffsetFill")
+
+	if (GetThread()->Run() != wxTHREAD_NO_ERROR)
 	{
-		std::string latticeType(mOffsetPanel->getLatticeType());
-		float offset(mOffsetPanel->getOffsetValue());
-		std::string inputPath(mOffsetPanel->getLatticeType());
-		Operations::OffsetFill(offset, inputPath, latticeType, outPath);
+		wxMessageBox("Could not run the worker thread!", windowTitle, wxICON_ERROR);
+		return;
+	}
+
+	mProgress->Pulse();
+	mSaveButton->Disable();
+	event.Skip();
+}
+
+wxThread::ExitCode uiMain::Entry()
+{
+	try
+	{
+		if (mFunctions->GetValue() == "Generate")
+		{
+			float voxelSize(mGeneratePanel->getVoxelSize());
+			int gridSize(mGeneratePanel->getGridSize());
+			std::string latticeType(mGeneratePanel->getLatticeType());
+			Operations::GenerateLattice(voxelSize, gridSize, latticeType, mOutPath);
+		}
+		else if (mFunctions->GetValue() == "OffsetFill")
+		{
+			std::string latticeType(mOffsetPanel->getLatticeType());
+			float offset(mOffsetPanel->getOffsetValue());
+			std::string inputPath(mOffsetPanel->getInputPath());
+			Operations::OffsetFill(offset, inputPath, latticeType, mOutPath);
+		}
+		else
+		{
+			std::string inputAPath(mBooleanPanel->getInputAPath());
+			std::string inputBPath(mBooleanPanel->getInputBPath());
+			std::string type(mBooleanPanel->getOperationType());
+			float t[]{ mBooleanPanel->getXTranslation(), mBooleanPanel->getYTranslation(), mBooleanPanel->getZTranslation() };
+			Operations::Boolean(inputAPath, inputBPath, type, t, mOutPath);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		auto evt = new wxThreadEvent(wxEVT_THREAD);
+		evt->SetInt(1);
+		evt->SetString(e.what());
+		QueueEvent(evt);
+		return (wxThread::ExitCode)1;
+	}
+
+	auto evt = new wxThreadEvent(wxEVT_THREAD);
+	evt->SetInt(0);
+	QueueEvent(evt);
+	return (wxThread::ExitCode)0;
+}
+
+void uiMain::onThreadUpdate(wxThreadEvent& evt)
+{
+	mProgress->SetValue(0);
+
+	if (evt.GetInt() == 0)
+	{
+		wxMessageBox("Completed!", windowTitle, wxICON_INFORMATION);
 	}
 	else
 	{
-
+		wxMessageBox(evt.GetString(), windowTitle, wxICON_ERROR);
 	}
 
-	event.Skip();
+	mSaveButton->Enable();
+}
+
+std::string uiMain::getSaveWindowLabel()
+{
+	return mFunctions->GetValue() == "OffsetFill" ? "Save OBJ file" : "Save VDB file";
+}
+
+std::string uiMain::getSaveWindowFilter()
+{
+	return mFunctions->GetValue() == "OffsetFill" ? "OBJ files (*.obj)|*.obj" : "VDB files (*.vdb)|*.vdb";
 }

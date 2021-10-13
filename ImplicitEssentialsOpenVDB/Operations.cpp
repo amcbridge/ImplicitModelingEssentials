@@ -21,45 +21,45 @@ void Operations::GenerateLattice(float voxelSize, int gridDimension, const std::
 	IO::Write(latticeGrid, outPath);
 }
 
-void Operations::Boolean(const BooleanParameters & params)
+void Operations::Boolean(const std::string& inputA, const std::string& inputB, const std::string& type,
+	float translation[3], const std::string& outPath)
 {
-	auto aGrid = IO::Read(params.GetInputPath());
-	auto bGrid = IO::Read(params.GetSecondInputPath());
+	auto aGrid = IO::Read(inputA);
+	auto bGrid = IO::Read(inputB);
+	std::string operationType(type);
+	std::transform(operationType.begin(), operationType.end(), operationType.begin(), ::tolower);
 
 	openvdb::math::Transform::Ptr transform = bGrid->transformPtr();
-	transform->postTranslate(params.GetTranslation());
+	transform->postTranslate(openvdb::Vec3s(translation));
 	
 	openvdb::Mat4R xform =
 		(*transform).baseMap()->getAffineMap()->getMat4() *
 		aGrid->transform().baseMap()->getAffineMap()->getMat4().inverse();
-
-	std::cout << "Transforming grid" << std::endl;
 
 	openvdb::FloatGrid::Ptr transformedBGrid = openvdb::FloatGrid::create(bGrid->background());
 	transformedBGrid->setTransform(aGrid->transformPtr());
 	openvdb::tools::GridTransformer transformer(xform);
 	
 	transformer.transformGrid<openvdb::tools::BoxSampler>(*bGrid, *transformedBGrid);
-	std::cout << "Transform done" << std::endl;
 
-	if (params.GetOperation() == "union")
+	if (operationType == "union")
 	{
 		openvdb::tools::csgUnion(*aGrid, *transformedBGrid);
 	}
-	else if (params.GetOperation() == "difference")
+	else if (operationType == "difference")
 	{
 		openvdb::tools::csgDifference(*aGrid, *transformedBGrid);
 	}
-	else if (params.GetOperation() == "intersection")
+	else if (operationType == "intersection")
 	{
 		openvdb::tools::csgIntersection(*aGrid, *transformedBGrid);
 	}
 	else
 	{
-		throw std::runtime_error("Unknown boolean operation: " + params.GetOperation());
+		throw std::runtime_error("Unknown boolean operation: " + type);
 	}
 
-	IO::Write(aGrid, params.GetOutputPath());
+	IO::Write(aGrid, outPath);
 }
 
 void Operations::OffsetFill(float offset, const std::string& inputPath, const std::string& latticeType, const std::string& outPath)
@@ -67,12 +67,8 @@ void Operations::OffsetFill(float offset, const std::string& inputPath, const st
 	auto mainGrid = IO::Read(inputPath);
 	openvdb::FloatGrid::Ptr innerGrid = mainGrid->deepCopy();
 
-	std::cout << "Offsetting grid" << std::endl;
-
 	openvdb::tools::LevelSetFilter<openvdb::FloatGrid> filter(*innerGrid);
 	filter.offset(offset);
-
-	std::cout << "Offset finished" << std::endl;
 
 	openvdb::CoordBBox gridSize = innerGrid->evalActiveVoxelBoundingBox();
 	auto background = innerGrid->background();
@@ -89,17 +85,19 @@ void Operations::OffsetFill(float offset, const std::string& inputPath, const st
 
 Lattice& Operations::GetLatticeType(const std::string & name)
 {
-	if (name == "primitive")
+	std::string type(name);
+	std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+	if (type == "primitive")
 	{
 		static PrimitiveLattice primitive;
 		return primitive;
 	}
-	else if (name == "gyroid")
+	else if (type == "gyroid")
 	{
 		static GyroidLattice gyroid;
 		return gyroid;
 	}
-	else if (name == "diamond")
+	else if (type == "diamond")
 	{
 		static DiamondLattice diamond;
 		return diamond;
@@ -110,7 +108,6 @@ Lattice& Operations::GetLatticeType(const std::string & name)
 
 void Operations::FillGridWithLattice(const std::string & latticeType, openvdb::FloatGrid::Ptr grid, const openvdb::CoordBBox & bbox)
 {
-	std::cout << "Filling grid with lattice" << std::endl;
 	Lattice& lattice = Operations::GetLatticeType(latticeType);
 	typename openvdb::FloatGrid::Accessor accessor = grid->getAccessor();
 	openvdb::Vec3s size(grid->voxelSize());
@@ -123,6 +120,7 @@ void Operations::FillGridWithLattice(const std::string & latticeType, openvdb::F
 		{
 			for (k = bbox.min().z(); k < bbox.max().z(); ++k)
 			{
+				auto wCoords = grid->transform().indexToWorld(ijk);
 				double x = i * size.x();
 				double y = j * size.y();
 				double z = k * size.z();
@@ -135,6 +133,4 @@ void Operations::FillGridWithLattice(const std::string & latticeType, openvdb::F
 			}
 		}
 	}
-
-	std::cout << "Grid filled" << std::endl;
 }

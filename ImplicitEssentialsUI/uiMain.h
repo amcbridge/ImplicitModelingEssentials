@@ -4,15 +4,20 @@
 #include "offsetPanel.h"
 #include "booleanPanel.h"
 
-class uiMain : public wxFrame
+class uiMain : public wxFrame, public wxThreadHelper
 {
 	public:
 		uiMain();
 		~uiMain();
-		wxDECLARE_EVENT_TABLE();
+	protected:
+		virtual wxThread::ExitCode Entry() override;
 	private:
+		void onThreadUpdate(wxThreadEvent& evt);
+		wxDECLARE_EVENT_TABLE();
 		void onComboboxValueChanged(wxCommandEvent& event);
 		void onExecuteClick(wxCommandEvent& event);
+		std::string getSaveWindowLabel();
+		std::string getSaveWindowFilter();
 
 		generatePanel* mGeneratePanel;
 		offsetPanel* mOffsetPanel;
@@ -21,5 +26,7 @@ class uiMain : public wxFrame
 		wxButton* mButton;
 		wxBoxSizer* mSizer;
 		wxButton* mSaveButton;
+		std::string mOutPath; 
+		wxGauge* mProgress;
 };
 

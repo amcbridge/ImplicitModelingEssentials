@@ -11,7 +11,7 @@ class booleanPanel : public basePanel
 		~booleanPanel();
 		const std::string& getInputAPath() const { return mFilePathA; }
 		const std::string& getInputBPath() const { return mFilePathB; }
-		const std::string getLatticeType() const { return mOperationType->GetValue().ToStdString(); }
+		const std::string getOperationType() const { return mOperationType->GetValue().ToStdString(); }
 		float getXTranslation() const { return std::stof(mTranslateX->GetValue().ToStdString()); }
 		float getYTranslation() const { return std::stof(mTranslateY->GetValue().ToStdString()); }
 		float getZTranslation() const { return std::stof(mTranslateZ->GetValue().ToStdString()); }

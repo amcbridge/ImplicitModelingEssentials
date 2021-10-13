@@ -1,5 +1,4 @@
 [build_requires]
-jsonformoderncpp/3.7.0@vthiery/stable
 openvdb/8.0.1
 
 [generators]

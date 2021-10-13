@@ -1,6 +1,5 @@
 #pragma once
 #include <math.h>
-#include <tbb/tbb.h>
 #include <openvdb/openvdb.h>
 
 const openvdb::Vec3s size(0.01);
@@ -18,8 +17,6 @@ class Lattice
 		double Sx(double x) const { return S(mKx, x, Lx); }
 		double Sy(double y) const { return S(mKy, y, Ly); }
 		double Sz(double z) const { return S(mKz, z, Lz); }
-
-		double t = -0.1;
 
 	private:
 		double k(int n) const { return 2 * M_PI * n; }
@@ -45,7 +42,7 @@ class PrimitiveLattice : public Lattice
 	public:
 		virtual double Calculate(double x, double y, double z) const override
 		{
-			return Cx(x) + Cy(y) + Cz(z) - t;
+			return Cx(x) + Cy(y) + Cz(z);
 		}
 };
 
@@ -54,7 +51,7 @@ class GyroidLattice : public Lattice
 	public:
 		virtual double Calculate(double x, double y, double z) const override
 		{
-			return Cx(x) * Sy(y) + Cy(y) * Sz(z) + Cz(z) * Sx(x) - t;
+			return Cx(x) * Sy(y) + Cy(y) * Sz(z) + Cz(z) * Sx(x);
 		}
 };
 
@@ -63,7 +60,7 @@ class DiamondLattice : public Lattice
 	public:
 		virtual double Calculate(double x, double y, double z) const override
 		{
-			return Sx(x) * Sy(y) * Sz(z) + Sx(x) * Cy(y) * Cz(z) + Cx(x) * Sy(y) * Cz(z) + Cx(x) * Cy(y) * Sz(z) - t;
+			return Sx(x) * Sy(y) * Sz(z) + Sx(x) * Cy(y) * Cz(z) + Cx(x) * Sy(y) * Cz(z) + Cx(x) * Cy(y) * Sz(z);
 		}
 };
 

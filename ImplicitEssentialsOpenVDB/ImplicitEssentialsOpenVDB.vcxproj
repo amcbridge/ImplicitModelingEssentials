@@ -165,13 +165,11 @@
   <ItemGroup>
     <ClCompile Include="Lattice.cpp" />
     <ClCompile Include="Operations.cpp" />
-    <ClCompile Include="ParametersReader.cpp" />
     <ClCompile Include="IO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Lattice.h" />
     <ClInclude Include="Operations.h" />
-    <ClInclude Include="ParametersReader.h" />
     <ClInclude Include="IO.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
