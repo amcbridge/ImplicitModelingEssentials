@@ -1,5 +1,4 @@
 #pragma once
-#include "ParametersReader.h"
 #include "IO.h"
 #include <openvdb/tools/LevelSetFilter.h>
 #include "Lattice.h"
@@ -10,9 +9,10 @@
 class Operations
 {
 	public:	
-		static void GenerateLattice(const GenerateParameters& params);
-		static void Boolean(const BooleanParameters& params);
-		static void OffsetFill(const OffsetParameters& params);
+		static void GenerateLattice(float voxelSize, int gridDimension, const std::string& latticeType, const std::string& outPath);
+		static void Boolean(const std::string& inputA, const std::string& inputB, const std::string& type,
+			float translation[3], const std::string& outPath);
+		static void OffsetFill(float offset, const std::string& inputPath, const std::string& latticeType, const std::string& outPath);
 	private:
 		static Lattice& GetLatticeType(const std::string& name);
 		static void FillGridWithLattice(const std::string& latticeType, openvdb::FloatGrid::Ptr grid, 
